@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=Pers_CIR
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=18
+#SBATCH --time=02:00:00
+#SBATCH --output=ANCE_retrieval-indexing.out
+
+
+python gen_tokenized_doc.py --config=gen_tokenized_doc.toml
+python gen_doc_embeddings.py --config=gen_doc_embeddings.toml
