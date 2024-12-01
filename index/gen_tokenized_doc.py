@@ -87,10 +87,13 @@ class EmbeddingCache:
 
 
 def numbered_byte_file_generator(base_path, file_no, record_size):
+    #print("record_size", record_size)
     for i in range(file_no):
         with open('{}_split{}'.format(base_path, i), 'rb') as f:
+            #print('{}_split{}'.format(base_path, i))
             while True:
                 b = f.read(record_size)
+                #print("b", b)
                 if not b:
                     # eof
                     break
@@ -103,14 +106,24 @@ def tokenize_to_file(args, i, num_process, in_path, out_path, line_fn):
     with open(in_path, 'r', encoding='utf-8') if in_path[-2:] != "gz" else gzip.open(in_path, 'rt', encoding='utf8') as in_f,\
             open('{}_split{}'.format(out_path, i), 'wb') as out_f:
         first_line = False # tsv with first line
+        #print("inf_f", in_f)
         for idx, line in enumerate(in_f):
             if idx % num_process != i or first_line:
                 first_line = False
                 continue
             try:
                 res = line_fn(args, line, tokenizer)
+                #print("res", res)
             except ValueError:
+                #print("line length", len(line))
+                #print("line type", type(line))
+
+                #print("line", line)
+                #print("line -1", line[-1])
+                #print("args.model_type", args.model_type)
+                #print("args.pretrained_passage_encoder", args.pretrained_passage_encoder)
                 print("Bad passage.")
+                raise ValueError
             else:
                 out_f.write(res)
 
@@ -143,6 +156,8 @@ def preprocess(args):
         args.data_output_path,
         "passages",
     )
+
+    #print("out_passage_path", out_passage_path)
 
     if os.path.exists(out_passage_path):
         print("preprocessed data already exist, exit preprocessing")
@@ -219,11 +234,18 @@ def PassagePreprocessingFn(args, line, tokenizer, title = False):
     elif ext == ".tsv":
         try:
             line_arr = line.split('\t')
-            p_id = int(line_arr[0])
+            #print("PassagePreprocessingFn debug")
+            #print("line_arr[0]", line_arr[0])
+            #print("line_arr", line_arr)
+            # p_id = int(line_arr[0]) with MARCO, the ID is an string
+            p_id = int(line_arr[0].split('_')[-1])
+            #print("p_id", p_id)
             if title == True:
                 p_text = line_arr[2].rstrip().replace(' [SEP] ', ' ') + ' ' + line_arr[1].rstrip()
+                #print("a title line_arr", line_arr)
             else:
                 p_text = line_arr[1].rstrip()
+            #print("p_text", p_text)
         except IndexError:  # split error
             raise ValueError  # empty passage
         else:
